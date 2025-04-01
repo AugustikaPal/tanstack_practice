@@ -1,21 +1,28 @@
-import React from 'react'
+import React, { useEffect } from 'react'
 import { useInfiniteQuery } from '@tanstack/react-query'
 import axios from 'axios'
+import {useInView} from 'react-intersection-observer';
+
 
 
 // for infinte scroll / query 
 //step 1 = use useInfiniteQuery hook
-//step 2 = the infi..hook includes a query function that recieves an object and inside that object we get pagePara, property = page number (1st page or 2ns or 3rd)
+//step 2 = the infi..hook includes a query function that recieves an object and inside that object we get pageParam, property = page number (1st page or 2ns or 3rd)
 //step 3 == whenever the component mounts on the dom ,the first page that needs to be fetcghed that must start from initialPageParam (1 here)
 
-//step 4 : getNextPageParam(main function is to get the next page number & if it doesnt exists , it returns undefined) : takes in 2 arg = lastPage (contains entire API response of the last ,most recent data fetch) , allPages (array of objects that contains API responses of all the data fetches)
+//step 4 : getNextPageParam(main function is to get the next page number & if it doesnt exists , it returns undefined) : takes in 2 arg = lastPage (contains entire API response of the last most recent data fetch) , allPages (array of objects that contains API responses of all the data fetches)
+
+//this inView object is of boolean type , whenever the ref gets into the viewport , it is turned to true else false
+
 
 const fetchFruits = ({pageParam}) =>{
-        return axios.get(`http://localhost:3000/fruits/?_limit=4&_page=${pageParam}`)
+        return axios.get(`http://localhost:3000/fruits/?_limit=10&_page=${pageParam}`)
 }
 const InfiniteQueries = () => {
 
-    const {data,isLoading , error ,isError,fetchNextPage,hasNextPage} = useInfiniteQuery({
+
+
+    const {data,isLoading , error ,isError,fetchNextPage,hasNextPage ,isFetchNextPage ,isFetchingNextPage} = useInfiniteQuery({
         queryKey:["fruits"],
         queryFn : fetchFruits,
         initialPageParam:1,
@@ -31,6 +38,11 @@ const InfiniteQueries = () => {
 
     })
     console.log(data,"data");
+    const { ref, inView} = useInView();
+    useEffect(()=>{
+        if(inView)
+            fetchNextPage();
+    },[fetchNextPage,inView]);
 
     
     if (isLoading)
@@ -38,6 +50,8 @@ const InfiniteQueries = () => {
     if(isError)
         return <div>{error.message}</div>
     console.log('heyy',data);
+
+
 
     
   return (
@@ -53,8 +67,12 @@ const InfiniteQueries = () => {
                 ))
             })
         }
-        <button className='' disabled={!hasNextPage} onClick={fetchNextPage}>Load more..</button>
-      
+        {/* <button className='' disabled={!hasNextPage} onClick={fetchNextPage}>Load more..</button> */}
+{/* 
+        if we want the items to automatically loadd as page scrolls 
+       */}
+
+       <div ref={ref}>{isFetchNextPage && "Loading ...."}</div>
     </div>
   )
 }
